@@ -1,6 +1,6 @@
 🕹️ Chip4Nano
 
-Chip4Nano is a lightweight CHIP-8 emulator built for the Arduino Nano.
+Chip4Nano is a Open-source lightweight CHIP-8 emulator built for the Arduino Nano.
 It uses a joystick for input and an SH1106 OLED display for output, with
 no external memory required.
 
