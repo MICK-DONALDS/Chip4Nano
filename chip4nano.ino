@@ -1,9 +1,3 @@
-/*
- * CHIP-8 Emulator + ROM Loader – Arduino Nano (v1.4 - Memory Optimized)
- * Flash mode stays until joystick button is released
- * Now fits in 2048B SRAM
- */
-
 #include <Arduino.h>
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
@@ -11,16 +5,13 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 
-// ── Display: Page mode (saves ~1KB RAM) ──────────────────────────────────────
 U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 
-// ── Joystick ─────────────────────────────────────────────────────────────────
 #define JOY_X     A0
 #define JOY_Y     A1
 #define JOY_SW    2
 #define JOY_DEAD  300
 
-// ── Serial / flash protocol ──────────────────────────────────────────────────
 #define SERIAL_BAUD 57600
 #define CHUNK_SIZE  32
 #define MAX_ROM     1024
@@ -29,14 +20,12 @@ U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 #define ACK 0x06
 #define NAK 0x15
 
-// ── Chip-8 constants ─────────────────────────────────────────────────────────
 #define RAM_BASE   0x200u
 #define RAM_SIZE   512u
 #define DISP_W     64
 #define DISP_H     32
 #define DISP_BYTES 256
 
-// ── SRAM (tight but fits) ────────────────────────────────────────────────────
 static uint8_t  ram[RAM_SIZE];
 static uint8_t  fb[DISP_BYTES];
 static uint8_t  V[16];
@@ -47,7 +36,6 @@ static uint8_t  dtimer, stimer;
 static uint8_t  keybits;
 static bool     drawFlag;
 
-// ── Font ─────────────────────────────────────────────────────────────────────
 static const uint8_t FONT[80] PROGMEM = {
   0xF0,0x90,0x90,0x90,0xF0, 0x20,0x60,0x20,0x20,0x70,
   0xF0,0x10,0xF0,0x80,0xF0, 0xF0,0x10,0xF0,0x10,0xF0,
@@ -59,7 +47,6 @@ static const uint8_t FONT[80] PROGMEM = {
   0xF0,0x80,0xF0,0x80,0xF0, 0xF0,0x80,0xF0,0x80,0x80
 };
 
-// ── Boot log (smaller) ───────────────────────────────────────────────────────
 static const char BL0[] PROGMEM = "Chip4Nano";
 static const char BL1[] PROGMEM = "Enjoy!";
 static const char BL2[] PROGMEM = "ATmega328P";
@@ -71,9 +58,6 @@ static const char BL6[] PROGMEM = "Press Joystick";
 static const char * const BOOT_LINES[] PROGMEM = {BL0,BL1,BL2,BL3,BL4,BL5,BL6};
 #define BOOT_LINE_COUNT 7
 
-// =============================================================================
-// FLASH MODE (stays until button released)
-// =============================================================================
 static void oledMsg(const char *l1, const char *l2 = nullptr) {
   u8g2.firstPage();
   do {
@@ -107,7 +91,7 @@ static void runFlashMode() {
   Serial.println("READY");
 
   while (true) {
-    if (digitalRead(JOY_SW)) {        // button released?
+    if (digitalRead(JOY_SW)) {
       oledMsg("Exiting", "Restarting...");
       delay(800);
       wdt_enable(WDTO_15MS);
@@ -118,7 +102,6 @@ static void runFlashMode() {
     delay(10);
   }
 
-  // Receive size
   while (Serial.available() < 2) delay(10);
   uint16_t rom_size = ((uint16_t)Serial.read() << 8) | Serial.read();
 
@@ -185,9 +168,6 @@ static void runFlashMode() {
   while (true);
 }
 
-// =============================================================================
-// EMULATOR
-// =============================================================================
 static uint8_t memRead(uint16_t addr) {
   if (addr < 0x050u) return pgm_read_byte(&FONT[addr]);
   if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE)
@@ -277,7 +257,6 @@ static void chip8Init() {
     ram[i] = EEPROM.read(i);
 }
 
-// Fast rendering with page mode
 static void renderDisplay() {
   u8g2.firstPage();
   do {
@@ -385,9 +364,6 @@ static void readInputs() {
   if (!digitalRead(JOY_SW)) keybits |= K_SW;
 }
 
-// =============================================================================
-// setup / loop
-// =============================================================================
 void setup() {
   pinMode(JOY_SW, INPUT_PULLUP);
   u8g2.begin();
